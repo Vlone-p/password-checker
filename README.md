@@ -1,4 +1,4 @@
-#🛡️ Zero-Trust Password Checker
+# 🛡️ Zero-Trust Password Checker
 
 A modern, privacy-first password strength checker and breach database scanner that runs entirely in the browser. No backend, no tracking, no data collection.
 ##🌐 Live Demo
