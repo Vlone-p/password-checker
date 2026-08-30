@@ -1,13 +1,13 @@
-##🛡️ Zero-Trust Password Checker
+#🛡️ Zero-Trust Password Checker
 
-#A modern, privacy-first password strength checker and breach database scanner that runs entirely in the browser. No backend, no tracking, no data collection.
+A modern, privacy-first password strength checker and breach database scanner that runs entirely in the browser. No backend, no tracking, no data collection.
 ##🌐 Live Demo
 
 Check it out live here: https://vlone-p.github.io/password-checker/
 ##🧠 The Concept
 
 Traditional password checkers send your password to a server, which is a massive privacy risk. This tool uses a Zero-Trust, Client-Side architecture. Your password never leaves your machine.
-#How does the Breach Check work privately?
+###How does the Breach Check work privately?
 
 We use a concept called k-Anonymity using the SHA-1 hashing algorithm:
 
