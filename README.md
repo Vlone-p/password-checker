@@ -19,7 +19,7 @@ We use a concept called k-Anonymity using the SHA-1 hashing algorithm:
 Result: You know if your password is leaked, but HIBP never saw your password.
 ## ✨ Features
 
-Real time Strength Meter: Evaluates length, complexity, and mathematical entropy.
+**Real time Strength Meter**: Evaluates length, complexity, and mathematical entropy.
 Dictionary Attack Detection: Flags common base words (e.g., "password", "letmein") that hackers prioritize in rule-based attacks.
 Actionable Security Tips: Dynamic, color coded feedback telling the user exactly what to fix (Red = Critical, Yellow = Helpful, Green = Good).
 Secure Breach Scanning: k-Anonymity API integration with HIBP.
