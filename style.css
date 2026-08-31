@@ -89,21 +89,10 @@ input:focus {
     align-items: center;
     justify-content: center;
     padding: 4px;
-    border-radius: 4px;
 }
 
 .toggle-eye:hover {
     color: var(--text-main);
-}
-
-/* Keyboard Accessibility */
-input:focus-visible, .toggle-eye:focus-visible {
-    outline: 2px solid var(--accent-blue);
-    outline-offset: 2px;
-}
-
-.switch input:focus-visible + .slider {
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
 }
 
 .strength-bar {
@@ -113,21 +102,13 @@ input:focus-visible, .toggle-eye:focus-visible {
     margin-bottom: 10px;
     transition: all 0.3s ease;
     overflow: hidden;
-    width: 0%;
 }
-
-/* Strength Classes */
-.strength-weak { width: 25%; background-color: var(--accent-red); box-shadow: 0 0 10px var(--accent-red); }
-.strength-moderate { width: 50%; background-color: var(--accent-orange); box-shadow: 0 0 10px var(--accent-orange); }
-.strength-strong { width: 75%; background-color: var(--accent-yellow); box-shadow: 0 0 10px var(--accent-yellow); }
-.strength-very-strong { width: 100%; background-color: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
 
 .strength-text {
     font-family: 'Courier New', Courier, monospace;
     font-size: 14px;
     font-weight: bold;
     margin-bottom: 20px;
-    color: var(--text-muted); /* Default color moved to CSS */
 }
 
 .tips-container {
@@ -209,6 +190,7 @@ input:checked + .slider:before {
     font-size: 14px;
     padding: 10px;
     border-radius: 6px;
+    display: none;
     line-height: 1.4;
     font-family: 'Courier New', Courier, monospace;
 }
@@ -224,9 +206,14 @@ input:checked + .slider:before {
     line-height: 1.5;
 }
 
-/* Copilot Fixes: Utility classes & Initial SVG visibility */
-.hidden { display: none !important; }
-#eyeClosed { display: none; } /* Hidden by default via CSS */
+/* Screen-reader only helper */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
 
 @media (max-width: 480px) {
     body {
