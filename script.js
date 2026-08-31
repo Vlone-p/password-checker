@@ -9,35 +9,40 @@ const breachToggle = document.getElementById('breachToggle');
 const breachInfo = document.getElementById('breachInfo');
 const breachStatus = document.getElementById('breachStatus');
 
-const commonPasswords = ["password", "123456", "12345678", "qwerty", "abc123", "admin", "letmein", "welcome", "monkey", "dragon"];
+// Expanded list of top 50 most common passwords
+const commonPasswords = [
+    "123456", "password", "12345678", "qwerty", "123456789", "12345", "1234", "111111", "1234567", "dragon",
+    "123123", "baseball", "abc123", "football", "monkey", "letmein", "696969", "shadow", "master", "666666",
+    "qwertyuiop", "123321", "mustang", "1234567890", "michael", "654321", "pussy", "superman", "1qaz2wsx", "7777777",
+    "fuckyou", "121212", "000000", "qazwsx", "123qwe", "killer", "trustno1", "jordan", "jennifer", "zxcvbnm",
+    "asdfgh", "hunter", "buster", "soccer", "harley", "batman", "andrew", "tigger", "sunshine", "iloveyou"
+];
 
-let timeoutId;
-function debounce(func, delay) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(func, delay);
-}
+// Global state for debounce and aborting requests
+let debounceTimer = null;
+let abortController = null;
 
 toggleEye.addEventListener('click', () => {
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        eyeOpen.style.display = 'none';
-        eyeClosed.style.display = 'block';
-        toggleEye.setAttribute('aria-label', 'Hide password');
-    } else {
-        passwordInput.type = 'password';
-        eyeOpen.style.display = 'block';
-        eyeClosed.style.display = 'none';
-        toggleEye.setAttribute('aria-label', 'Show password');
-    }
+    // Toggle password visibility
+    const isHidden = passwordInput.type === 'password';
+    passwordInput.type = isHidden ? 'text' : 'password';
+    eyeOpen.style.display = isHidden ? 'none' : 'block';
+    eyeClosed.style.display = isHidden ? 'block' : 'none';
+    toggleEye.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
 });
 
 breachToggle.addEventListener('change', () => {
     if (breachToggle.checked) {
         breachInfo.style.display = 'block';
-        checkBreach();
+        // Trigger check immediately if there's already text
+        if (passwordInput.value.length > 0) {
+            scheduleBreachCheck(passwordInput.value);
+        }
     } else {
         breachInfo.style.display = 'none';
         breachStatus.style.display = 'none';
+        // Abort any pending check if toggled off
+        if (abortController) abortController.abort();
     }
 });
 
@@ -46,11 +51,25 @@ passwordInput.addEventListener('input', () => {
     checkStrength(password);
 
     if (breachToggle.checked && password.length > 0) {
-        debounce(() => checkBreach(password), 500);
+        scheduleBreachCheck(password);
     } else {
         breachStatus.style.display = 'none';
+        if (abortController) abortController.abort();
     }
 });
+
+function scheduleBreachCheck(password) {
+    // Clear previous debounce timer
+    if (debounceTimer) clearTimeout(debounceTimer);
+    
+    // Abort any currently running fetch request
+    if (abortController) abortController.abort();
+
+    // Set new timer
+    debounceTimer = setTimeout(() => {
+        checkBreach(password);
+    }, 500);
+}
 
 function checkStrength(password) {
     let score = 0;
@@ -137,9 +156,10 @@ function checkStrength(password) {
     });
 }
 
-async function checkBreach() {
-    const password = passwordInput.value;
-    if (!password) return;
+async function checkBreach(password) {
+    // Setup new AbortController for this specific request
+    abortController = new AbortController();
+    const signal = abortController.signal;
 
     breachStatus.style.display = 'block';
     breachStatus.style.backgroundColor = 'var(--input-bg)';
@@ -152,33 +172,61 @@ async function checkBreach() {
         const hashBuffer = await crypto.subtle.digest('SHA-1', data);
         
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        // Force uppercase to match HIBP API response format
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
         
         const prefix = hashHex.substring(0, 5);
         const suffix = hashHex.substring(5);
 
-        const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+        const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, { signal });
+
+        // Handle HTTP errors (Rate limiting, server down, etc.)
+        if (!response.ok) {
+            if (response.status === 429) {
+                throw new Error('Rate limited by API. Please wait a moment before typing more.');
+            } else {
+                throw new Error(`API returned HTTP ${response.status}. Service might be down.`);
+            }
+        }
+
         const text = await response.text();
 
         const isPwned = text.split('\n').some(line => {
-            return line.split(':')[0] === suffix.toUpperCase();
+            return line.split(':')[0] === suffix;
         });
 
-        breachStatus.style.display = 'block';
-        if (isPwned) {
-            breachStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-            breachStatus.style.color = 'var(--accent-red)';
-            breachStatus.textContent = '> WARNING: Breach detected! Found in public data leaks.';
-        } else {
-            breachStatus.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
-            breachStatus.style.color = 'var(--accent-green)';
-            breachStatus.textContent = '> SECURE: Not found in known data breaches.';
+        // Only update UI if this request wasn't aborted by a newer keystroke
+        if (!signal.aborted) {
+            breachStatus.style.display = 'block';
+            if (isPwned) {
+                breachStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                breachStatus.style.color = 'var(--accent-red)';
+                breachStatus.textContent = '> WARNING: Breach detected! Found in public data leaks.';
+            } else {
+                breachStatus.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                breachStatus.style.color = 'var(--accent-green)';
+                breachStatus.textContent = '> SECURE: Not found in known data breaches.';
+            }
         }
 
     } catch (error) {
-        breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
-        breachStatus.style.color = 'var(--accent-orange)';
-        breachStatus.textContent = '> ERROR: Network issue or browser policy blocked request.';
-        console.error("Breach check error:", error);
+        // If the error is because we aborted it, do nothing (a newer request is handling it)
+        if (error.name === 'AbortError') {
+            return;
+        }
+        
+        // Handle network errors and API errors gracefully
+        if (!signal.aborted) {
+            breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+            breachStatus.style.color = 'var(--accent-orange)';
+            breachStatus.textContent = `> ERROR: ${error.message}`;
+            // Security best practice: log generic error, never log the password or hash
+            console.error("Breach check failed.");
+        }
+    } finally {
+        // Clean up controller if this one is still the active one
+        if (abortController && abortController.signal === signal) {
+            abortController = null;
+        }
     }
 }

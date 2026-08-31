@@ -89,10 +89,21 @@ input:focus {
     align-items: center;
     justify-content: center;
     padding: 4px;
+    border-radius: 4px; /* Rounded for focus outline */
 }
 
 .toggle-eye:hover {
     color: var(--text-main);
+}
+
+/* Keyboard Accessibility */
+input:focus-visible, .toggle-eye:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+.switch input:focus-visible + .slider {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
 }
 
 .strength-bar {
