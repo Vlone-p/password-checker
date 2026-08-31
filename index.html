@@ -13,10 +13,10 @@
     
     <div class="input-group">
         <input type="password" id="passwordInput" placeholder="Enter secure string..." autocomplete="new-password" aria-label="Password input field">
-        <span class="toggle-eye" id="toggleEye" title="Show/Hide Password" role="button" aria-label="Show password" tabindex="0" aria-pressed="false">
-            <svg id="eyeOpen" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            <svg id="eyeClosed" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.97 10.97 0 0 1 12 20c-7 0-11-8-11-8a21.76 21.76 0 0 1 5.06-6.06"></path><path d="M1 1l22 22"></path></svg>
-        </span>
+        <button class="toggle-eye" id="toggleEye" title="Show/Hide Password" type="button" aria-label="Show password" tabindex="0" aria-pressed="false">
+            <svg class="eye eye-open" id="eyeOpen" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg class="eye eye-closed" id="eyeClosed" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.97 10.97 0 0 1 12 20c-7 0-11-8-11-8a21.76 21.76 0 0 1 5.06-6.06"></path><path d="M1 1l22 22"></path></svg>
+        </button>
     </div>
 
     <div class="strength-bar" id="strengthBar"></div>
@@ -36,9 +36,16 @@
             </label>
         </div>
         
-        <div class="info-box" id="breachInfo" style="display: none;">
+        <div class="info-box hidden" id="breachInfo">
             <strong>How does this work privately?</strong><br>
-            We use k-Anonymity. Your password is converted to a mathematical hash (SHA-1). Only the first 5 characters of that hash are sent to the HaveIBeenPwned API. The API returns a list of leaked hash suffixes and counts. Your browser compares the full local hash against these suffixes locally — your full hash (or password) is never sent to the service.
+            We use a concept called <strong>k-Anonymity</strong> using the <strong>SHA-1</strong> hashing algorithm:
+            <br><br>
+            1. Your browser hashes your password locally using the Web Crypto API.<br>
+            2. Only the first 5 characters of that hash are sent to the HaveIBeenPwned (HIBP) API.<br>
+            3. The API returns a list of hundreds of leaked password hashes that start with those 5 characters.<br>
+            4. Your browser checks if your full hash is in that list locally.<br>
+            <br>
+            <strong>Result:</strong> You know if your password is leaked, but HIBP never saw your password.
         </div>
 
         <div class="breach-status" id="breachStatus" role="status"></div>
