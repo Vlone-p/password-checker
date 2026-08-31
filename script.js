@@ -12,11 +12,101 @@ const inputFeedback = document.getElementById('inputFeedback'); // aria-live fee
 
 const commonPasswords = ["password", "123456", "12345678", "qwerty", "abc123", "admin", "letmein", "welcome", "monkey", "dragon"];
 
-let timeoutId;
-function debounce(func, delay) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(func, delay);
+// Debounce factory that returns a callable debounced function and a cancel method
+function makeDebounce(fn, delay) {
+  let timer = null;
+  return {
+    call: (...args) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        fn(...args);
+      }, delay);
+    },
+    cancel: () => {
+      if (timer) clearTimeout(timer);
+      timer = null;
+    }
+  };
 }
+
+// AbortController used to cancel in-flight breach fetches
+let breachAbortController = null;
+
+// The actual breach check logic (cancellable via breachAbortController)
+async function performBreachCheck(password) {
+  if (!password) return;
+
+  // abort previous in-flight request (if any)
+  if (breachAbortController) {
+    try { breachAbortController.abort(); } catch (e) { /* ignore */ }
+    breachAbortController = null;
+  }
+  breachAbortController = new AbortController();
+  const { signal } = breachAbortController;
+
+  breachStatus.style.display = 'block';
+  breachStatus.style.backgroundColor = 'var(--input-bg)';
+  breachStatus.style.color = 'var(--text-muted)';
+  breachStatus.textContent = '> Scanning breach databases securely...';
+
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+    const prefix = hashHex.substring(0, 5);
+    const suffix = hashHex.substring(5);
+
+    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, { signal });
+    if (!response.ok) {
+      if (response.status === 429) {
+        breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+        breachStatus.style.color = 'var(--accent-orange)';
+        breachStatus.textContent = '> ERROR: Rate limited by breach service. Try again later.';
+      } else {
+        breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+        breachStatus.style.color = 'var(--accent-orange)';
+        breachStatus.textContent = `> ERROR: Breach service returned status ${response.status}.`;
+      }
+      return;
+    }
+
+    const text = await response.text();
+    const isPwned = text.split('\n').some(line => {
+      const returned = (line.split(':')[0] || '').trim().toUpperCase();
+      return returned === suffix;
+    });
+
+    if (isPwned) {
+      breachStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+      breachStatus.style.color = 'var(--accent-red)';
+      breachStatus.textContent = '> WARNING: Breach detected! Found in public data leaks.';
+    } else {
+      breachStatus.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+      breachStatus.style.color = 'var(--accent-green)';
+      breachStatus.textContent = '> SECURE: Not found in known data breaches.';
+    }
+
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      // expected when aborting previous request - do nothing
+      return;
+    }
+    breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+    breachStatus.style.color = 'var(--accent-orange)';
+    breachStatus.textContent = '> ERROR: Network issue or browser policy blocked request.';
+    console.error('Breach check error:', error);
+  } finally {
+    // Keep controller around only while request is active; clear it after
+    breachAbortController = null;
+  }
+}
+
+const debouncedBreach = makeDebounce(performBreachCheck, 500);
 
 // Toggle show/hide
 toggleEye.addEventListener('click', () => {
@@ -46,10 +136,14 @@ toggleEye.addEventListener('keydown', (e) => {
 breachToggle.addEventListener('change', () => {
     if (breachToggle.checked) {
         breachInfo.style.display = 'block';
-        checkBreach();
+        const password = passwordInput.value;
+        if (password) debouncedBreach.call(password);
     } else {
         breachInfo.style.display = 'none';
         breachStatus.style.display = 'none';
+        // cancel pending debounce and abort in-flight fetch
+        debouncedBreach.cancel();
+        if (breachAbortController) try { breachAbortController.abort(); } catch (e) {}
     }
 });
 
@@ -80,6 +174,9 @@ passwordInput.addEventListener('paste', (e) => {
         inputFeedback.textContent = 'Spaces removed from pasted text.';
         setTimeout(() => { inputFeedback.textContent = ''; }, 2000);
     }
+    // Cancel pending breach checks (we'll schedule after input event)
+    debouncedBreach.cancel();
+    if (breachAbortController) try { breachAbortController.abort(); } catch (e) {}
     passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
 });
 
@@ -96,6 +193,8 @@ passwordInput.addEventListener('drop', (e) => {
         inputFeedback.textContent = 'Spaces removed from dropped text.';
         setTimeout(() => { inputFeedback.textContent = ''; }, 2000);
     }
+    debouncedBreach.cancel();
+    if (breachAbortController) try { breachAbortController.abort(); } catch (e) {}
     passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
 });
 
@@ -115,7 +214,7 @@ passwordInput.addEventListener('input', () => {
     checkStrength(password);
 
     if (breachToggle.checked && password.length > 0) {
-        debounce(() => checkBreach(password), 500);
+        debouncedBreach.call(password);
     } else {
         breachStatus.style.display = 'none';
     }
@@ -204,63 +303,4 @@ function checkStrength(password) {
         div.textContent = tip.text;
         tipsContainer.appendChild(div);
     });
-}
-
-async function checkBreach() {
-    const password = passwordInput.value;
-    if (!password) return;
-
-    breachStatus.style.display = 'block';
-    breachStatus.style.backgroundColor = 'var(--input-bg)';
-    breachStatus.style.color = 'var(--text-muted)';
-    breachStatus.textContent = '> Scanning breach databases securely...';
-
-    try {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-        
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-        
-        const prefix = hashHex.substring(0, 5);
-        const suffix = hashHex.substring(5);
-
-        const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
-        if (!response.ok) {
-            if (response.status === 429) {
-                breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
-                breachStatus.style.color = 'var(--accent-orange)';
-                breachStatus.textContent = '> ERROR: Rate limited by breach service. Try again later.';
-            } else {
-                breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
-                breachStatus.style.color = 'var(--accent-orange)';
-                breachStatus.textContent = `> ERROR: Breach service returned status ${response.status}.`;
-            }
-            return;
-        }
-        const text = await response.text();
-
-        const isPwned = text.split('\n').some(line => {
-            const returned = (line.split(':')[0] || '').trim().toUpperCase();
-            return returned === suffix;
-        });
-
-        breachStatus.style.display = 'block';
-        if (isPwned) {
-            breachStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-            breachStatus.style.color = 'var(--accent-red)';
-            breachStatus.textContent = '> WARNING: Breach detected! Found in public data leaks.';
-        } else {
-            breachStatus.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
-            breachStatus.style.color = 'var(--accent-green)';
-            breachStatus.textContent = '> SECURE: Not found in known data breaches.';
-        }
-
-    } catch (error) {
-        breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
-        breachStatus.style.color = 'var(--accent-orange)';
-        breachStatus.textContent = '> ERROR: Network issue or browser policy blocked request.';
-        console.error('Breach check error:', error);
-    }
 }
