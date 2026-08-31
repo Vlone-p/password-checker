@@ -42,3 +42,7 @@ If you have Python installed, run this in your terminal:
 python -m http.server 8000
 
 Then open http://localhost:8000 in your browser.
+
+##🌐 Browser Support
+
+This tool uses modern Web APIs (AbortController, ES6 Modules, Web Crypto API). It is fully supported on all modern browsers (Chrome, Edge, Firefox, Safari). If you are using an outdated browser, the breach check will gracefully disable itself.
