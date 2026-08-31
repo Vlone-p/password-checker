@@ -30,7 +30,6 @@ let breachAbortController = null;
 const debouncedBreachCheck = makeDebounce(async (password) => {
     if (!password) return;
     
-    // Copilot Fix: Graceful fallback if Web Crypto API is unavailable (old browsers)
     if (!window.crypto || !window.crypto.subtle) {
         breachStatus.classList.remove('hidden');
         breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
@@ -104,15 +103,16 @@ const debouncedBreachCheck = makeDebounce(async (password) => {
 function togglePasswordVisibility() {
     const isHidden = passwordInput.type === 'password';
     passwordInput.type = isHidden ? 'text' : 'password';
-    eyeOpen.style.display = isHidden ? 'none' : 'block';
-    eyeClosed.style.display = isHidden ? 'block' : 'none';
+    
+    // Use a CSS class on the wrapper to toggle icons cleanly
+    toggleEye.classList.toggle('password-text-visible', isHidden);
+    
     toggleEye.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
     toggleEye.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
 }
 
 toggleEye.addEventListener('click', togglePasswordVisibility);
 toggleEye.addEventListener('keydown', (e) => {
-    // Copilot Fix: Handle both ' ' and 'Spacebar' for cross-browser support
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') {
         e.preventDefault();
         togglePasswordVisibility();
