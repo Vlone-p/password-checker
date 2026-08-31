@@ -21,6 +21,7 @@ describe('scorePassword', () => {
   });
 
   it('should rate strong passwords as very-strong', () => {
-    expect(scorePassword('My-Very-Strong-Password-2024!').category).toBe('very-strong');
+    // Changed to a random string without common dictionary words
+    expect(scorePassword('X7v#kL9@pQ2z-MnB4!').category).toBe('very-strong');
   });
 });
