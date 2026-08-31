@@ -1,12 +1,12 @@
 # 🛡️ Zero-Trust Password Checker
 
-**A modern, privacy-first password strength checker and breach database scanner that runs entirely in the browser. No backend, no tracking, no data collection.**
+**A modern, privacy first password strength checker and breach database scanner that runs entirely in the browser. No backend, no tracking, no data collection.**
 ## 🌐 Live Demo
 
 Check it out live here:  https://vlone-p.github.io/password-checker/
 ## 🧠 The Concept
 
-Traditional password checkers send your password to a server, which is a massive privacy risk. This tool uses a Zero-Trust, Client-Side architecture. Your password never leaves your machine.
+Traditional password checkers send your password to a server, which is a massive privacy risk. This tool uses a Zero Trust, Client Side architecture. Your password never leaves your machine.
 ### How does the Breach Check work privately?
 
 We use a concept called k-Anonymity using the SHA-1 hashing algorithm:
@@ -16,7 +16,7 @@ We use a concept called k-Anonymity using the SHA-1 hashing algorithm:
 3. The API returns a list of hundreds of leaked password hashes that start with those 5 characters.
 4. Your browser checks if your full hash is in that list locally.
 
-Result: You know if your password is leaked, but HIBP never saw your password.
+**Result:** You know if your password is leaked, but HIBP never saw your password.
 ## ✨ Features
 
 **Real time Strength Meter**: Evaluates length, complexity, and mathematical entropy.
@@ -24,7 +24,7 @@ Result: You know if your password is leaked, but HIBP never saw your password.
 **Actionable Security Tips**: Dynamic, color coded feedback telling the user exactly what to fix (Red = Critical, Yellow = Helpful, Green = Good).
 **Secure Breach Scanning**: k-Anonymity API integration with HIBP.
 **Cyberpunk/Terminal UI**: Dark mode, monospace typography, and neon aesthetic.
-**XSS Safe**: Uses secure DOM manipulation (textContent) to prevent Cross-Site Scripting via the input field.
+**XSS Safe**: Uses secure DOM manipulation (textContent) to prevent Cross Site Scripting via the input field.
 **Mobile Responsive**: Works flawlessly on mobile devices without iOS auto-zoom issues.
 ## 🛠️ Tech Stack
 
