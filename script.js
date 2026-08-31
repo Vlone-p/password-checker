@@ -30,7 +30,6 @@ let breachAbortController = null;
 const debouncedBreachCheck = makeDebounce(async (password) => {
     if (!password) return;
     
-    // Copilot Fix: Graceful fallback if Web Crypto API is unavailable (old browsers)
     if (!window.crypto || !window.crypto.subtle) {
         breachStatus.classList.remove('hidden');
         breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
@@ -112,7 +111,6 @@ function togglePasswordVisibility() {
 
 toggleEye.addEventListener('click', togglePasswordVisibility);
 toggleEye.addEventListener('keydown', (e) => {
-    // Copilot Fix: Handle both ' ' and 'Spacebar' for cross-browser support
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') {
         e.preventDefault();
         togglePasswordVisibility();
@@ -133,8 +131,22 @@ breachToggle.addEventListener('change', () => {
     }
 });
 
-passwordInput.addEventListener('input', () => {
-    const password = passwordInput.value;
+// Prevent Spacebar from being typed in the input
+passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+    }
+});
+
+passwordInput.addEventListener('input', (e) => {
+    let password = passwordInput.value;
+    
+    // Strip spaces if user copy-pasted a password with spaces
+    if (password.includes(' ')) {
+        password = password.replace(/\s/g, '');
+        passwordInput.value = password;
+    }
+
     const scoreResult = scorePassword(password);
     renderScore(scoreResult, password);
 
