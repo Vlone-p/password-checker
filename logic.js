@@ -22,7 +22,6 @@ export function scorePassword(password) {
     // Improved Regex: Catches "password", "password1", "!password", but NOT "compassword"
     const isCommon = commonPasswords.some(common => {
         const escaped = escapeRegExp(common);
-        // Matches if the word is at the start, or preceded by a non-letter, and followed by anything
         const regex = new RegExp(`(^|[^a-z])${escaped}`, 'i');
         return regex.test(password);
     });

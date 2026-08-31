@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Zero Trust Password Checker</title>
+    <!-- Stricter CSP: No more 'unsafe-inline' for styles -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.pwnedpasswords.com; style-src 'self';">
+    <title>Zero-Trust Password Checker</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,19 +15,16 @@
     
     <div class="input-group">
         <input type="password" id="passwordInput" placeholder="Enter secure string..." autocomplete="new-password" aria-label="Password input field">
-        <button class="toggle-eye" id="toggleEye" title="Show/Hide Password" type="button" aria-label="Show password" tabindex="0" aria-pressed="false">
-            <svg class="eye eye-open" id="eyeOpen" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            <svg class="eye eye-closed" id="eyeClosed" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.97 10.97 0 0 1 12 20c-7 0-11-8-11-8a21.76 21.76 0 0 1 5.06-6.06"></path><path d="M1 1l22 22"></path></svg>
-        </button>
+        <span class="toggle-eye" id="toggleEye" title="Show/Hide Password" role="button" tabindex="0" aria-label="Show password" aria-pressed="false">
+            <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </span>
     </div>
 
     <div class="strength-bar" id="strengthBar"></div>
-    <div class="strength-text" id="strengthText" style="color: var(--text-muted);">Awaiting input...</div>
+    <div class="strength-text" id="strengthText">Awaiting input...</div>
 
     <div class="tips-container" id="tipsContainer"></div>
-
-    <!-- aria-live feedback for input sanitization -->
-    <div id="inputFeedback" class="sr-only" role="status" aria-live="polite"></div>
 
     <div class="breach-section">
         <div class="toggle-container">
@@ -48,10 +47,10 @@
             <strong>Result:</strong> You know if your password is leaked, but HIBP never saw your password.
         </div>
 
-        <div class="breach-status" id="breachStatus" role="status"></div>
+        <div class="breach-status hidden" id="breachStatus" role="status" aria-live="polite"></div>
     </div>
 </div>
 
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
 </html>

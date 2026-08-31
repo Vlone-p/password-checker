@@ -1,3 +1,5 @@
+import { scorePassword } from './logic.js';
+
 const passwordInput = document.getElementById('passwordInput');
 const toggleEye = document.getElementById('toggleEye');
 const eyeOpen = document.getElementById('eyeOpen');
@@ -8,296 +10,176 @@ const tipsContainer = document.getElementById('tipsContainer');
 const breachToggle = document.getElementById('breachToggle');
 const breachInfo = document.getElementById('breachInfo');
 const breachStatus = document.getElementById('breachStatus');
-const inputFeedback = document.getElementById('inputFeedback'); // aria-live feedback
 
-const commonPasswords = ["password", "123456", "12345678", "qwerty", "abc123", "admin", "letmein", "welcome", "monkey", "dragon"];
-
-// Debounce factory that returns a callable debounced function and a cancel method
 function makeDebounce(fn, delay) {
-  let timer = null;
-  return {
-    call: (...args) => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        timer = null;
-        fn(...args);
-      }, delay);
-    },
-    cancel: () => {
-      if (timer) clearTimeout(timer);
-      timer = null;
-    }
-  };
+    let timeout = null;
+    return {
+        call: (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => fn(...args), delay);
+        },
+        cancel: () => {
+            clearTimeout(timeout);
+            timeout = null;
+        }
+    };
 }
 
-// AbortController used to cancel in-flight breach fetches
 let breachAbortController = null;
 
-// The actual breach check logic (cancellable via breachAbortController)
-async function performBreachCheck(password) {
-  if (!password) return;
-
-  // abort previous in-flight request (if any)
-  if (breachAbortController) {
-    try { breachAbortController.abort(); } catch (e) { /* ignore */ }
-    breachAbortController = null;
-  }
-  breachAbortController = new AbortController();
-  const { signal } = breachAbortController;
-
-  breachStatus.style.display = 'block';
-  breachStatus.style.backgroundColor = 'var(--input-bg)';
-  breachStatus.style.color = 'var(--text-muted)';
-  breachStatus.textContent = '> Scanning breach databases securely...';
-
-  try {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-
-    const prefix = hashHex.substring(0, 5);
-    const suffix = hashHex.substring(5);
-
-    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, { signal });
-    if (!response.ok) {
-      if (response.status === 429) {
+const debouncedBreachCheck = makeDebounce(async (password) => {
+    if (!password) return;
+    
+    // Copilot Fix: Graceful fallback if Web Crypto API is unavailable (old browsers)
+    if (!window.crypto || !window.crypto.subtle) {
+        breachStatus.classList.remove('hidden');
         breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
         breachStatus.style.color = 'var(--accent-orange)';
-        breachStatus.textContent = '> ERROR: Rate limited by breach service. Try again later.';
-      } else {
-        breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
-        breachStatus.style.color = 'var(--accent-orange)';
-        breachStatus.textContent = `> ERROR: Breach service returned status ${response.status}.`;
-      }
-      return;
+        breachStatus.textContent = '> ERROR: Your browser does not support secure hashing (Web Crypto API).';
+        return;
     }
 
-    const text = await response.text();
-    const isPwned = text.split('\n').some(line => {
-      const returned = (line.split(':')[0] || '').trim().toUpperCase();
-      return returned === suffix;
-    });
+    if (breachAbortController) breachAbortController.abort();
+    breachAbortController = new AbortController();
+    const signal = breachAbortController.signal;
 
-    if (isPwned) {
-      breachStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-      breachStatus.style.color = 'var(--accent-red)';
-      breachStatus.textContent = '> WARNING: Breach detected! Found in public data leaks.';
-    } else {
-      breachStatus.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
-      breachStatus.style.color = 'var(--accent-green)';
-      breachStatus.textContent = '> SECURE: Not found in known data breaches.';
-    }
+    breachStatus.classList.remove('hidden');
+    breachStatus.style.backgroundColor = 'var(--input-bg)';
+    breachStatus.style.color = 'var(--text-muted)';
+    breachStatus.textContent = '> Scanning breach databases securely...';
 
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      // expected when aborting previous request - do nothing
-      return;
+    try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+        
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+        
+        const prefix = hashHex.slice(0, 5);
+        const suffix = hashHex.slice(5);
+
+        const resp = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, { signal });
+
+        if (!resp.ok) {
+            if (resp.status === 429) {
+                throw new Error('Rate limited by breach API. Please wait a moment before typing more.');
+            } else {
+                throw new Error(`Breach service returned HTTP ${resp.status}.`);
+            }
+        }
+
+        const text = await resp.text();
+        const isPwned = text.split('\n').some(line => {
+            const returned = line.split(':')[0].trim().toUpperCase();
+            return returned === suffix;
+        });
+
+        if (!signal.aborted) {
+            if (isPwned) {
+                breachStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                breachStatus.style.color = 'var(--accent-red)';
+                breachStatus.textContent = '> WARNING: Breach detected! Found in public data leaks.';
+            } else {
+                breachStatus.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                breachStatus.style.color = 'var(--accent-green)';
+                breachStatus.textContent = '> SECURE: Not found in known data breaches.';
+            }
+        }
+    } catch (err) {
+        if (err.name === 'AbortError') return;
+        if (!signal.aborted) {
+            breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+            breachStatus.style.color = 'var(--accent-orange)';
+            breachStatus.textContent = `> ERROR: ${err.message}`;
+            console.error("Breach check failed.");
+        }
+    } finally {
+        if (breachAbortController && breachAbortController.signal === signal) {
+            breachAbortController = null;
+        }
     }
-    breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
-    breachStatus.style.color = 'var(--accent-orange)';
-    breachStatus.textContent = '> ERROR: Network issue or browser policy blocked request.';
-    console.error('Breach check error:', error);
-  } finally {
-    // Keep controller around only while request is active; clear it after
-    breachAbortController = null;
-  }
+}, 500);
+
+function togglePasswordVisibility() {
+    const isHidden = passwordInput.type === 'password';
+    passwordInput.type = isHidden ? 'text' : 'password';
+    eyeOpen.style.display = isHidden ? 'none' : 'block';
+    eyeClosed.style.display = isHidden ? 'block' : 'none';
+    toggleEye.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+    toggleEye.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
 }
 
-const debouncedBreach = makeDebounce(performBreachCheck, 500);
-
-// Toggle show/hide
-toggleEye.addEventListener('click', () => {
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        eyeOpen.style.display = 'none';
-        eyeClosed.style.display = 'block';
-        toggleEye.setAttribute('aria-label', 'Hide password');
-        toggleEye.setAttribute('aria-pressed', 'true');
-    } else {
-        passwordInput.type = 'password';
-        eyeOpen.style.display = 'block';
-        eyeClosed.style.display = 'none';
-        toggleEye.setAttribute('aria-label', 'Show password');
-        toggleEye.setAttribute('aria-pressed', 'false');
-    }
-});
-
-// Keyboard support for toggle (Enter / Space)
+toggleEye.addEventListener('click', togglePasswordVisibility);
 toggleEye.addEventListener('keydown', (e) => {
+    // Copilot Fix: Handle both ' ' and 'Spacebar' for cross-browser support
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') {
         e.preventDefault();
-        toggleEye.click();
+        togglePasswordVisibility();
     }
 });
 
 breachToggle.addEventListener('change', () => {
     if (breachToggle.checked) {
-        breachInfo.style.display = 'block';
-        const password = passwordInput.value;
-        if (password) debouncedBreach.call(password);
+        breachInfo.classList.remove('hidden');
+        if (passwordInput.value.length > 0) {
+            debouncedBreachCheck.call(passwordInput.value);
+        }
     } else {
-        breachInfo.style.display = 'none';
-        breachStatus.style.display = 'none';
-        // cancel pending debounce and abort in-flight fetch
-        debouncedBreach.cancel();
-        if (breachAbortController) try { breachAbortController.abort(); } catch (e) {}
+        breachInfo.classList.add('hidden');
+        breachStatus.classList.add('hidden');
+        debouncedBreachCheck.cancel();
+        if (breachAbortController) breachAbortController.abort();
     }
 });
 
-// Prevent spaces while typing (but allow Tab, Enter, etc.)
+// Prevent Spacebar from being typed in the input
 passwordInput.addEventListener('keydown', (e) => {
-    if (e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') {
-        // Allow if modifier keys (Ctrl/Meta/Alt) are pressed for shortcuts
-        if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-            e.preventDefault();
-            if (inputFeedback) {
-                inputFeedback.textContent = 'Spaces are not allowed in the password.';
-                setTimeout(() => { inputFeedback.textContent = ''; }, 2000);
-            }
-        }
+    if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
     }
 });
 
-// Intercept paste to strip whitespace before inserting
-passwordInput.addEventListener('paste', (e) => {
-    e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData).getData('text') || '';
-    const sanitized = text.replace(/\s/g, '');
-    const start = passwordInput.selectionStart || 0;
-    const end = passwordInput.selectionEnd || 0;
-    const newVal = passwordInput.value.slice(0, start) + sanitized + passwordInput.value.slice(end);
-    passwordInput.value = newVal;
-    if (inputFeedback && text !== sanitized) {
-        inputFeedback.textContent = 'Spaces removed from pasted text.';
-        setTimeout(() => { inputFeedback.textContent = ''; }, 2000);
-    }
-    // Cancel pending breach checks (we'll schedule after input event)
-    debouncedBreach.cancel();
-    if (breachAbortController) try { breachAbortController.abort(); } catch (e) {}
-    passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
-});
-
-// Intercept drop to strip whitespace
-passwordInput.addEventListener('drop', (e) => {
-    e.preventDefault();
-    const text = (e.dataTransfer && e.dataTransfer.getData('text')) || '';
-    const sanitized = text.replace(/\s/g, '');
-    const start = passwordInput.selectionStart || 0;
-    const end = passwordInput.selectionEnd || 0;
-    const newVal = passwordInput.value.slice(0, start) + sanitized + passwordInput.value.slice(end);
-    passwordInput.value = newVal;
-    if (inputFeedback && text !== sanitized) {
-        inputFeedback.textContent = 'Spaces removed from dropped text.';
-        setTimeout(() => { inputFeedback.textContent = ''; }, 2000);
-    }
-    debouncedBreach.cancel();
-    if (breachAbortController) try { breachAbortController.abort(); } catch (e) {}
-    passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
-});
-
-passwordInput.addEventListener('input', () => {
-    // Defensive: remove any whitespace that might have slipped through
-    const raw = passwordInput.value;
-    const sanitized = raw.replace(/\s/g, '');
-    if (raw !== sanitized) {
-        passwordInput.value = sanitized;
-        if (inputFeedback) {
-            inputFeedback.textContent = 'Spaces removed from input.';
-            setTimeout(() => { inputFeedback.textContent = ''; }, 2000);
-        }
+passwordInput.addEventListener('input', (e) => {
+    let password = passwordInput.value;
+    
+    // Strip spaces if user copy-pasted a password with spaces
+    if (password.includes(' ')) {
+        password = password.replace(/\s/g, '');
+        passwordInput.value = password;
     }
 
-    const password = passwordInput.value;
-    checkStrength(password);
+    const scoreResult = scorePassword(password);
+    renderScore(scoreResult, password);
 
     if (breachToggle.checked && password.length > 0) {
-        debouncedBreach.call(password);
+        debouncedBreachCheck.call(password);
     } else {
-        breachStatus.style.display = 'none';
+        breachStatus.classList.add('hidden');
+        debouncedBreachCheck.cancel();
+        if (breachAbortController) breachAbortController.abort();
     }
 });
 
-function checkStrength(password) {
-    let score = 0;
-    let tips = [];
-    
+function renderScore(result, password) {
     if (password.length === 0) {
-        strengthBar.style.width = '0%';
-        strengthBar.style.backgroundColor = 'var(--bg-color)';
-        strengthBar.style.boxShadow = 'none';
+        strengthBar.className = 'strength-bar';
         strengthText.textContent = 'Awaiting input...';
         strengthText.style.color = 'var(--text-muted)';
         tipsContainer.innerHTML = '';
         return;
     }
 
-    const lowerPass = password.toLowerCase();
-    const isCommon = commonPasswords.some(common => lowerPass.includes(common));
+    strengthBar.className = `strength-bar strength-${result.category}`;
     
-    if (isCommon) {
-        tips.push({ text: "Contains a common dictionary word. While extra characters help, hackers specifically target variations of these words.", level: "yellow" });
-        score -= 2; 
-    }
+    const textMap = { 'weak': 'Weak', 'moderate': 'Moderate', 'strong': 'Strong', 'very-strong': 'Very Strong' };
+    const colorMap = { 'weak': 'var(--accent-red)', 'moderate': 'var(--accent-orange)', 'strong': 'var(--accent-yellow)', 'very-strong': 'var(--accent-green)' };
 
-    if (password.length < 8) {
-        tips.push({ text: "Too short. Use at least 12 characters.", level: "red" });
-    } else if (password.length < 12) {
-        tips.push({ text: "Decent length, but 12+ characters is highly recommended.", level: "yellow" });
-        score += 2;
-    } else {
-        tips.push({ text: "Great length! Length is your best defense against brute-force.", level: "green" });
-        score += 4;
-    }
-    
-    if (/[a-z]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add lowercase letters (a-z).", level: "red" }); 
-    }
-    if (/[A-Z]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add uppercase letters (A-Z).", level: "yellow" }); 
-    }
-    if (/[0-9]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add numbers (0-9).", level: "yellow" }); 
-    }
-    if (/[^a-zA-Z0-9]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add special characters (!@#$%^&*).", level: "yellow" }); 
-    }
-
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password) && /[0-9]/.test(password) && /[^a-zA-Z0-9]/.test(password)) {
-        tips.push({ text: "Excellent character variety.", level: "green" });
-    }
-
-    let displayScore = Math.max(0, score);
-    if (displayScore <= 3) {
-        strengthBar.style.width = '25%';
-        strengthBar.style.backgroundColor = 'var(--accent-red)';
-        strengthBar.style.boxShadow = '0 0 10px var(--accent-red)';
-        strengthText.textContent = 'Weak';
-        strengthText.style.color = 'var(--accent-red)';
-    } else if (displayScore <= 5) {
-        strengthBar.style.width = '50%';
-        strengthBar.style.backgroundColor = 'var(--accent-orange)';
-        strengthBar.style.boxShadow = '0 0 10px var(--accent-orange)';
-        strengthText.textContent = 'Moderate';
-        strengthText.style.color = 'var(--accent-orange)';
-    } else if (displayScore <= 7) {
-        strengthBar.style.width = '75%';
-        strengthBar.style.backgroundColor = 'var(--accent-yellow)';
-        strengthBar.style.boxShadow = '0 0 10px var(--accent-yellow)';
-        strengthText.textContent = 'Strong';
-        strengthText.style.color = 'var(--accent-yellow)';
-    } else {
-        strengthBar.style.width = '100%';
-        strengthBar.style.backgroundColor = 'var(--accent-green)';
-        strengthBar.style.boxShadow = '0 0 10px var(--accent-green)';
-        strengthText.textContent = 'Very Strong';
-        strengthText.style.color = 'var(--accent-green)';
-    }
+    strengthText.textContent = textMap[result.category];
+    strengthText.style.color = colorMap[result.category];
 
     tipsContainer.innerHTML = '';
-    tips.forEach(tip => {
+    result.tips.forEach(tip => {
         const div = document.createElement('div');
         div.className = `tip-item tip-${tip.level}`;
         div.textContent = tip.text;
