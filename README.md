@@ -19,13 +19,13 @@ We use a concept called k-Anonymity using the SHA-1 hashing algorithm:
 **Result:** You know if your password is leaked, but HIBP never saw your password.
 ## ✨ Features
 
--**Real time Strength Meter**: Evaluates length, complexity, and mathematical entropy.
--**Dictionary Attack Detection**: Flags common base words (e.g., "password", "letmein") that hackers prioritize in rule-based attacks.
--**Actionable Security Tips**: Dynamic, color coded feedback telling the user exactly what to fix (Red = Critical, Yellow = Helpful, Green = Good).
--**Secure Breach Scanning**: k-Anonymity API integration with HIBP.
--**Cyberpunk/Terminal UI**: Dark mode, monospace typography, and neon aesthetic.
--**XSS Safe**: Uses secure DOM manipulation (textContent) to prevent Cross Site Scripting via the input field.
--**Mobile Responsive**: Works flawlessly on mobile devices without iOS auto-zoom issues.
+- **Real time Strength Meter**: Evaluates length, complexity, and mathematical entropy.
+- **Dictionary Attack Detection**: Flags common base words (e.g., "password", "letmein") that hackers prioritize in rule-based attacks.
+- **Actionable Security Tips**: Dynamic, color coded feedback telling the user exactly what to fix (Red = Critical, Yellow = Helpful, Green = Good).
+- **Secure Breach Scanning**: k-Anonymity API integration with HIBP.
+- **Cyberpunk/Terminal UI**: Dark mode, monospace typography, and neon aesthetic.
+- **XSS Safe**: Uses secure DOM manipulation (textContent) to prevent Cross Site Scripting via the input field.
+- **Mobile Responsive**: Works flawlessly on mobile devices without iOS auto-zoom issues.
 ## 🛠️ Tech Stack
 
 **HTML5**: Semantic structure
