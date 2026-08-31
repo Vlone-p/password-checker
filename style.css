@@ -89,7 +89,7 @@ input:focus {
     align-items: center;
     justify-content: center;
     padding: 4px;
-    border-radius: 4px; /* Rounded for focus outline */
+    border-radius: 4px;
 }
 
 .toggle-eye:hover {
@@ -113,7 +113,14 @@ input:focus-visible, .toggle-eye:focus-visible {
     margin-bottom: 10px;
     transition: all 0.3s ease;
     overflow: hidden;
+    width: 0%;
 }
+
+/* Strength Classes (Cleaner than inline styles) */
+.strength-weak { width: 25%; background-color: var(--accent-red); box-shadow: 0 0 10px var(--accent-red); }
+.strength-moderate { width: 50%; background-color: var(--accent-orange); box-shadow: 0 0 10px var(--accent-orange); }
+.strength-strong { width: 75%; background-color: var(--accent-yellow); box-shadow: 0 0 10px var(--accent-yellow); }
+.strength-very-strong { width: 100%; background-color: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
 
 .strength-text {
     font-family: 'Courier New', Courier, monospace;

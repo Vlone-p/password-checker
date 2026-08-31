@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Zero Trust Password Checker</title>
+    <!-- Content Security Policy to harden against XSS -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.pwnedpasswords.com; style-src 'self' 'unsafe-inline';">
+    <title>Zero-Trust Password Checker</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,9 +15,9 @@
     
     <div class="input-group">
         <input type="password" id="passwordInput" placeholder="Enter secure string..." autocomplete="new-password" aria-label="Password input field">
-        <span class="toggle-eye" id="toggleEye" title="Show/Hide Password" role="button" aria-label="Show password">
-            <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-            <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        <span class="toggle-eye" id="toggleEye" title="Show/Hide Password" role="button" tabindex="0" aria-label="Show password" aria-pressed="false">
+            <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
         </span>
     </div>
 
@@ -35,7 +37,14 @@
         
         <div class="info-box" id="breachInfo" style="display: none;">
             <strong>How does this work privately?</strong><br>
-            We use k-Anonymity. Your password is converted to a mathematical hash (SHA-1). Only the first 5 characters of that hash are sent to the HaveIBeenPwned API. The API returns a list of leaked passwords that start with those 5 characters. Your browser checks the rest locally. Your actual password <strong>never</strong> leaves your device.
+            We use a concept called <strong>k-Anonymity</strong> using the <strong>SHA-1</strong> hashing algorithm:
+            <br><br>
+            1. Your browser hashes your password locally using the Web Crypto API.<br>
+            2. Only the first 5 characters of that hash are sent to the HaveIBeenPwned (HIBP) API.<br>
+            3. The API returns a list of hundreds of leaked password hashes that start with those 5 characters.<br>
+            4. Your browser checks if your full hash is in that list locally.<br>
+            <br>
+            <strong>Result:</strong> You know if your password is leaked, but HIBP never saw your password.
         </div>
 
         <div class="breach-status" id="breachStatus" role="status"></div>
