@@ -1,27 +1,29 @@
-// Copilot's regex escape utility to prevent regex injection
+// Copilot's regex escape utility
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Pure function: Calculates Score (No DOM manipulation)
+// Pure function: Calculates Score
 export function scorePassword(password) {
     let score = 0;
     let tips = [];
     
     if (password.length === 0) return { score: 0, tips: [], category: 'empty' };
 
+    // Curated list (removed offensive words, kept top common ones)
     const commonPasswords = [
         "123456", "password", "12345678", "qwerty", "123456789", "12345", "1234", "111111", "1234567", "dragon",
-        "123123", "baseball", "abc123", "football", "monkey", "letmein", "696969", "shadow", "master", "666666",
-        "qwertyuiop", "123321", "mustang", "1234567890", "michael", "654321", "pussy", "superman", "1qaz2wsx", "7777777",
-        "fuckyou", "121212", "000000", "qazwsx", "123qwe", "killer", "trustno1", "jordan", "jennifer", "zxcvbnm",
-        "asdfgh", "hunter", "buster", "soccer", "harley", "batman", "andrew", "tigger", "sunshine", "iloveyou"
+        "123123", "baseball", "abc123", "football", "monkey", "letmein", "shadow", "master", "666666", "qwertyuiop",
+        "123321", "mustang", "1234567890", "michael", "654321", "superman", "1qaz2wsx", "7777777", "121212", "000000",
+        "qazwsx", "123qwe", "killer", "trustno1", "jordan", "jennifer", "zxcvbnm", "asdfgh", "hunter", "buster",
+        "soccer", "harley", "batman", "andrew", "tigger", "sunshine", "iloveyou", "12345678910", "superman", "michael1"
     ];
 
-    // Copilot's regex fix: matches "password", "password!", "!password", but not "compassword"
+    // Improved Regex: Catches "password", "password1", "!password", but NOT "compassword"
     const isCommon = commonPasswords.some(common => {
         const escaped = escapeRegExp(common);
-        const regex = new RegExp(`(^|[^A-Za-z0-9])${escaped}([^A-Za-z0-9]|$)`, 'i');
+        // Matches if the word is at the start, or preceded by a non-letter, and followed by anything
+        const regex = new RegExp(`(^|[^a-z])${escaped}`, 'i');
         return regex.test(password);
     });
     

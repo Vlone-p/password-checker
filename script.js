@@ -11,7 +11,6 @@ const breachToggle = document.getElementById('breachToggle');
 const breachInfo = document.getElementById('breachInfo');
 const breachStatus = document.getElementById('breachStatus');
 
-// Copilot's Cancelable Debounce Factory
 function makeDebounce(fn, delay) {
     let timeout = null;
     return {
@@ -31,6 +30,15 @@ let breachAbortController = null;
 const debouncedBreachCheck = makeDebounce(async (password) => {
     if (!password) return;
     
+    // Copilot Fix: Graceful fallback if Web Crypto API is unavailable (old browsers)
+    if (!window.crypto || !window.crypto.subtle) {
+        breachStatus.classList.remove('hidden');
+        breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+        breachStatus.style.color = 'var(--accent-orange)';
+        breachStatus.textContent = '> ERROR: Your browser does not support secure hashing (Web Crypto API).';
+        return;
+    }
+
     if (breachAbortController) breachAbortController.abort();
     breachAbortController = new AbortController();
     const signal = breachAbortController.signal;
@@ -62,8 +70,6 @@ const debouncedBreachCheck = makeDebounce(async (password) => {
         }
 
         const text = await resp.text();
-        
-        // Copilot Fix: Trim and uppercase the returned suffix before comparing
         const isPwned = text.split('\n').some(line => {
             const returned = line.split(':')[0].trim().toUpperCase();
             return returned === suffix;
@@ -106,7 +112,8 @@ function togglePasswordVisibility() {
 
 toggleEye.addEventListener('click', togglePasswordVisibility);
 toggleEye.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    // Copilot Fix: Handle both ' ' and 'Spacebar' for cross-browser support
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space') {
         e.preventDefault();
         togglePasswordVisibility();
     }
