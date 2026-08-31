@@ -1,3 +1,4 @@
+import { scorePassword } from './logic.js';
 
 const passwordInput = document.getElementById('passwordInput');
 const toggleEye = document.getElementById('toggleEye');
@@ -9,15 +10,6 @@ const tipsContainer = document.getElementById('tipsContainer');
 const breachToggle = document.getElementById('breachToggle');
 const breachInfo = document.getElementById('breachInfo');
 const breachStatus = document.getElementById('breachStatus');
-
-// Expanded list of top 50 most common passwords
-const commonPasswords = [
-    "123456", "password", "12345678", "qwerty", "123456789", "12345", "1234", "111111", "1234567", "dragon",
-    "123123", "baseball", "abc123", "football", "monkey", "letmein", "696969", "shadow", "master", "666666",
-    "qwertyuiop", "123321", "mustang", "1234567890", "michael", "654321", "pussy", "superman", "1qaz2wsx", "7777777",
-    "fuckyou", "121212", "000000", "qazwsx", "123qwe", "killer", "trustno1", "jordan", "jennifer", "zxcvbnm",
-    "asdfgh", "hunter", "buster", "soccer", "harley", "batman", "andrew", "tigger", "sunshine", "iloveyou"
-];
 
 // Copilot's Cancelable Debounce Factory
 function makeDebounce(fn, delay) {
@@ -36,16 +28,14 @@ function makeDebounce(fn, delay) {
 
 let breachAbortController = null;
 
-// Setup the debounced breach check
 const debouncedBreachCheck = makeDebounce(async (password) => {
     if (!password) return;
     
-    // Cancel any previous request
     if (breachAbortController) breachAbortController.abort();
     breachAbortController = new AbortController();
     const signal = breachAbortController.signal;
 
-    breachStatus.style.display = 'block';
+    breachStatus.classList.remove('hidden');
     breachStatus.style.backgroundColor = 'var(--input-bg)';
     breachStatus.style.color = 'var(--text-muted)';
     breachStatus.textContent = '> Scanning breach databases securely...';
@@ -65,14 +55,19 @@ const debouncedBreachCheck = makeDebounce(async (password) => {
 
         if (!resp.ok) {
             if (resp.status === 429) {
-                throw new Error('Rate limited by breach API. Try again later.');
+                throw new Error('Rate limited by breach API. Please wait a moment before typing more.');
             } else {
                 throw new Error(`Breach service returned HTTP ${resp.status}.`);
             }
         }
 
         const text = await resp.text();
-        const isPwned = text.split('\n').some(line => line.split(':')[0] === suffix);
+        
+        // Copilot Fix: Trim and uppercase the returned suffix before comparing
+        const isPwned = text.split('\n').some(line => {
+            const returned = line.split(':')[0].trim().toUpperCase();
+            return returned === suffix;
+        });
 
         if (!signal.aborted) {
             if (isPwned) {
@@ -86,12 +81,12 @@ const debouncedBreachCheck = makeDebounce(async (password) => {
             }
         }
     } catch (err) {
-        if (err.name === 'AbortError') return; // Expected when cancelling
+        if (err.name === 'AbortError') return;
         if (!signal.aborted) {
             breachStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
             breachStatus.style.color = 'var(--accent-orange)';
             breachStatus.textContent = `> ERROR: ${err.message}`;
-            console.error("Breach check failed."); // No passwords/hashes logged
+            console.error("Breach check failed.");
         }
     } finally {
         if (breachAbortController && breachAbortController.signal === signal) {
@@ -100,7 +95,6 @@ const debouncedBreachCheck = makeDebounce(async (password) => {
     }
 }, 500);
 
-// Toggle Eye Click & Keyboard Accessibility
 function togglePasswordVisibility() {
     const isHidden = passwordInput.type === 'password';
     passwordInput.type = isHidden ? 'text' : 'password';
@@ -120,13 +114,13 @@ toggleEye.addEventListener('keydown', (e) => {
 
 breachToggle.addEventListener('change', () => {
     if (breachToggle.checked) {
-        breachInfo.style.display = 'block';
+        breachInfo.classList.remove('hidden');
         if (passwordInput.value.length > 0) {
             debouncedBreachCheck.call(passwordInput.value);
         }
     } else {
-        breachInfo.style.display = 'none';
-        breachStatus.style.display = 'none';
+        breachInfo.classList.add('hidden');
+        breachStatus.classList.add('hidden');
         debouncedBreachCheck.cancel();
         if (breachAbortController) breachAbortController.abort();
     }
@@ -140,68 +134,12 @@ passwordInput.addEventListener('input', () => {
     if (breachToggle.checked && password.length > 0) {
         debouncedBreachCheck.call(password);
     } else {
-        breachStatus.style.display = 'none';
+        breachStatus.classList.add('hidden');
         debouncedBreachCheck.cancel();
         if (breachAbortController) breachAbortController.abort();
     }
 });
 
-// Pure Function: Calculates Score (No DOM manipulation)
-function scorePassword(password) {
-    let score = 0;
-    let tips = [];
-    
-    if (password.length === 0) return { score: 0, tips: [], category: 'empty' };
-
-    // Copilot's regex fix to prevent "compassword" false positives
-    const isCommon = commonPasswords.some(common => {
-        const regex = new RegExp(`\\b${common}\\b`, 'i');
-        return regex.test(password);
-    });
-    
-    if (isCommon) {
-        tips.push({ text: "Contains a common dictionary word. While extra characters help, hackers specifically target variations of these words.", level: "yellow" });
-        score -= 2; 
-    }
-
-    if (password.length < 8) {
-        tips.push({ text: "Too short. Use at least 12 characters.", level: "red" });
-    } else if (password.length < 12) {
-        tips.push({ text: "Decent length, but 12+ characters is highly recommended.", level: "yellow" });
-        score += 2;
-    } else {
-        tips.push({ text: "Great length! Length is your best defense against brute-force.", level: "green" });
-        score += 4;
-    }
-    
-    if (/[a-z]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add lowercase letters (a-z).", level: "red" }); 
-    }
-    if (/[A-Z]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add uppercase letters (A-Z).", level: "yellow" }); 
-    }
-    if (/[0-9]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add numbers (0-9).", level: "yellow" }); 
-    }
-    if (/[^a-zA-Z0-9]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add special characters (!@#$%^&*).", level: "yellow" }); 
-    }
-
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password) && /[0-9]/.test(password) && /[^a-zA-Z0-9]/.test(password)) {
-        tips.push({ text: "Excellent character variety.", level: "green" });
-    }
-
-    let displayScore = Math.max(0, score);
-    let category = 'weak';
-    if (displayScore <= 3) category = 'weak';
-    else if (displayScore <= 5) category = 'moderate';
-    else if (displayScore <= 7) category = 'strong';
-    else category = 'very-strong';
-    
-    return { score: displayScore, tips, category };
-}
-
-// DOM Renderer: Updates UI based on pure function output
 function renderScore(result, password) {
     if (password.length === 0) {
         strengthBar.className = 'strength-bar';
@@ -211,22 +149,10 @@ function renderScore(result, password) {
         return;
     }
 
-    // Map category to CSS class
     strengthBar.className = `strength-bar strength-${result.category}`;
     
-    const textMap = {
-        'weak': 'Weak',
-        'moderate': 'Moderate',
-        'strong': 'Strong',
-        'very-strong': 'Very Strong'
-    };
-    
-    const colorMap = {
-        'weak': 'var(--accent-red)',
-        'moderate': 'var(--accent-orange)',
-        'strong': 'var(--accent-yellow)',
-        'very-strong': 'var(--accent-green)'
-    };
+    const textMap = { 'weak': 'Weak', 'moderate': 'Moderate', 'strong': 'Strong', 'very-strong': 'Very Strong' };
+    const colorMap = { 'weak': 'var(--accent-red)', 'moderate': 'var(--accent-orange)', 'strong': 'var(--accent-yellow)', 'very-strong': 'var(--accent-green)' };
 
     strengthText.textContent = textMap[result.category];
     strengthText.style.color = colorMap[result.category];

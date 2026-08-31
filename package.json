@@ -1,1 +1,12 @@
-
+{
+  "name": "zero-trust-password-checker",
+  "version": "1.0.0",
+  "description": "A modern, privacy-first password strength checker",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  }
+}
