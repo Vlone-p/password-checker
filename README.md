@@ -25,7 +25,7 @@ We use a concept called k-Anonymity using the SHA-1 hashing algorithm:
 - **Secure Breach Scanning**: k-Anonymity API integration with HIBP.
 - **Cyberpunk/Terminal UI**: Dark mode, monospace typography, and neon aesthetic.
 - **XSS Safe**: Uses secure DOM manipulation (textContent) to prevent Cross Site Scripting via the input field.
-- **Mobile Responsive**: Works flawlessly on mobile devices without iOS auto-zoom issues.
+- **Mobile Responsive**: Works flawlessly on mobile devices without iOS auto zoom issues.
 ## 🛠️ Tech Stack
 
 - **HTML5**: Semantic structure
