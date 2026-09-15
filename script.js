@@ -104,7 +104,6 @@ function togglePasswordVisibility() {
     const isHidden = passwordInput.type === 'password';
     passwordInput.type = isHidden ? 'text' : 'password';
     
-    // Use a CSS class on the wrapper to toggle icons cleanly
     toggleEye.classList.toggle('password-text-visible', isHidden);
     
     toggleEye.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
@@ -143,10 +142,20 @@ passwordInput.addEventListener('keydown', (e) => {
 passwordInput.addEventListener('input', (e) => {
     let password = passwordInput.value;
     
-    // Strip spaces if user copy-pasted a password with spaces
+    // FIX: Preserve cursor position when stripping spaces
     if (password.includes(' ')) {
+        const start = passwordInput.selectionStart;
+        const end = passwordInput.selectionEnd;
+        
+        // Calculate how many spaces were before the cursor to adjust position
+        const spacesBefore = (password.substring(0, start).match(/\s/g) || []).length;
+        
         password = password.replace(/\s/g, '');
         passwordInput.value = password;
+        
+        // Restore cursor position minus the spaces removed
+        const newCursorPos = start - spacesBefore;
+        passwordInput.setSelectionRange(newCursorPos, newCursorPos);
     }
 
     const scoreResult = scorePassword(password);
