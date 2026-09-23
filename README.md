@@ -29,7 +29,7 @@ We use a concept called k-Anonymity using the SHA-1 hashing algorithm:
 ## 🛠️ Tech Stack
 
 - **HTML5**: Semantic structure
-- **CSS3**: Flexbox, CSS Variables, Media Queries (Mobile-first)
+- **CSS3**: Flexbox, CSS Variables, Media Queries (Mobile first)
 - **Vanilla JavaScript**: DOM manipulation, async/await for API callsWeb 
 - **Crypto API**: For secure, local SHA-1 hashing
 
