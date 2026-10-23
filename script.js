@@ -132,7 +132,6 @@ breachToggle.addEventListener('change', () => {
     }
 });
 
-// Prevent Spacebar from being typed in the input
 passwordInput.addEventListener('keydown', (e) => {
     if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
@@ -142,18 +141,15 @@ passwordInput.addEventListener('keydown', (e) => {
 passwordInput.addEventListener('input', (e) => {
     let password = passwordInput.value;
     
-    // FIX: Preserve cursor position when stripping spaces
     if (password.includes(' ')) {
         const start = passwordInput.selectionStart;
         const end = passwordInput.selectionEnd;
         
-        // Calculate how many spaces were before the cursor to adjust position
         const spacesBefore = (password.substring(0, start).match(/\s/g) || []).length;
         
         password = password.replace(/\s/g, '');
         passwordInput.value = password;
         
-        // Restore cursor position minus the spaces removed
         const newCursorPos = start - spacesBefore;
         passwordInput.setSelectionRange(newCursorPos, newCursorPos);
     }

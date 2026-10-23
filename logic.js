@@ -1,16 +1,13 @@
-// Copilot's regex escape utility
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Pure function: Calculates Score
 export function scorePassword(password) {
     let score = 0;
     let tips = [];
     
     if (password.length === 0) return { score: 0, tips: [], category: 'empty' };
 
-    // Curated list (removed offensive words, kept top common ones)
     const commonPasswords = [
         "123456", "password", "12345678", "qwerty", "123456789", "12345", "1234", "111111", "1234567", "dragon",
         "123123", "baseball", "abc123", "football", "monkey", "letmein", "shadow", "master", "666666", "qwertyuiop",
@@ -19,7 +16,6 @@ export function scorePassword(password) {
         "soccer", "harley", "batman", "andrew", "tigger", "sunshine", "iloveyou", "12345678910", "superman", "michael1"
     ];
 
-    // Improved Regex: Catches "password", "password1", "!password", but NOT "compassword"
     const isCommon = commonPasswords.some(common => {
         const escaped = escapeRegExp(common);
         const regex = new RegExp(`(^|[^a-z])${escaped}`, 'i');
@@ -37,18 +33,18 @@ export function scorePassword(password) {
         tips.push({ text: "Decent length, but 12+ characters is highly recommended.", level: "yellow" });
         score += 2;
     } else {
-        tips.push({ text: "Great length! Length is your best defense against brute-force.", level: "green" });
+        tips.push({ text: "Great length! Length is your best defense against brute force attacks.", level: "green" });
         score += 4;
     }
     
     if (/[a-z]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add lowercase letters (a-z).", level: "red" }); 
+        tips.push({ text: "Add lowercase letters (a to z).", level: "red" }); 
     }
     if (/[A-Z]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add uppercase letters (A-Z).", level: "yellow" }); 
+        tips.push({ text: "Add uppercase letters (A to Z).", level: "yellow" }); 
     }
     if (/[0-9]/.test(password)) { score += 1; } else { 
-        tips.push({ text: "Add numbers (0-9).", level: "yellow" }); 
+        tips.push({ text: "Add numbers (0 to 9).", level: "yellow" }); 
     }
     if (/[^a-zA-Z0-9]/.test(password)) { score += 1; } else { 
         tips.push({ text: "Add special characters (!@#$%^&*).", level: "yellow" }); 

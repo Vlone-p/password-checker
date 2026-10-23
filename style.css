@@ -51,7 +51,7 @@ h1 {
     margin-bottom: 25px;
     color: var(--accent-blue);
     text-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
-    letter-spacing: 1px;
+    letter-spacing: 2px;
 }
 
 .input-group {
@@ -96,7 +96,6 @@ input:focus {
     color: var(--text-main);
 }
 
-/* Keyboard Accessibility */
 input:focus-visible, .toggle-eye:focus-visible {
     outline: 2px solid var(--accent-blue);
     outline-offset: 2px;
@@ -106,7 +105,6 @@ input:focus-visible, .toggle-eye:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
 }
 
-/* --- NEW: Clean SVG toggle logic via CSS classes --- */
 .toggle-eye svg {
     display: none;
 }
@@ -130,7 +128,6 @@ input:focus-visible, .toggle-eye:focus-visible {
     width: 0%;
 }
 
-/* Strength Classes */
 .strength-weak { width: 25%; background-color: var(--accent-red); box-shadow: 0 0 10px var(--accent-red); }
 .strength-moderate { width: 50%; background-color: var(--accent-orange); box-shadow: 0 0 10px var(--accent-orange); }
 .strength-strong { width: 75%; background-color: var(--accent-yellow); box-shadow: 0 0 10px var(--accent-yellow); }
@@ -238,7 +235,6 @@ input:checked + .slider:before {
     line-height: 1.5;
 }
 
-/* Utility classes */
 .hidden { display: none !important; }
 
 @media (max-width: 480px) {
