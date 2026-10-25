@@ -32,6 +32,15 @@ body {
     padding: 20px;
 }
 
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 450px;
+}
+
 .container {
     background-color: rgba(19, 21, 28, 0.95);
     backdrop-filter: blur(8px);
@@ -40,7 +49,27 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(59, 130, 246, 0.1);
     border: 1px solid var(--border-color);
     width: 100%;
-    max-width: 450px;
+}
+
+.github-link {
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.github-link:hover {
+    color: var(--accent-blue);
+    transform: translateY(2px);
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+}
+
+.github-link:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 4px;
 }
 
 h1 {
