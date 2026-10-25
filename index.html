@@ -10,52 +10,60 @@
 </head>
 <body>
 
-<div class="container">
-    <h1>PASSWORD CHECKER</h1>
-    
-    <div class="input-group">
-        <input type="password" id="passwordInput" placeholder="Enter secure string..." autocomplete="new-password" aria-label="Password input field">
-        <span class="toggle-eye" id="toggleEye" title="Show/Hide Password" role="button" tabindex="0" aria-label="Show password" aria-pressed="false">
-            <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
-                <circle cx="12" cy="12" r="3"/>
-            </svg>
-            <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
-                <circle cx="12" cy="12" r="3"/>
-                <line x1="2" y1="2" x2="22" y2="22"/>
-            </svg>
-        </span>
-    </div>
-
-    <div class="strength-bar" id="strengthBar"></div>
-    <div class="strength-text" id="strengthText">Awaiting input...</div>
-
-    <div class="tips-container" id="tipsContainer"></div>
-
-    <div class="breach-section">
-        <div class="toggle-container">
-            <span>Check against known data breaches</span>
-            <label class="switch">
-                <input type="checkbox" id="breachToggle" aria-label="Toggle breach check">
-                <span class="slider"></span>
-            </label>
-        </div>
+<div class="wrapper">
+    <div class="container">
+        <h1>PASSWORD CHECKER</h1>
         
-        <div class="info-box hidden" id="breachInfo">
-            <strong>How does this work privately?</strong><br>
-            We use a concept called <strong>kAnonymity</strong> using the <strong>SHA1</strong> hashing algorithm:
-            <br><br>
-            1. Your browser hashes your password locally using the Web Crypto API.<br>
-            2. Only the first 5 characters of that hash are sent to the HaveIBeenPwned (HIBP) API.<br>
-            3. The API returns a list of hundreds of leaked password hashes that start with those 5 characters.<br>
-            4. Your browser checks if your full hash is in that list locally.<br>
-            <br>
-            <strong>Result:</strong> You know if your password is leaked, but HIBP never saw your password.
+        <div class="input-group">
+            <input type="password" id="passwordInput" placeholder="Enter secure string..." autocomplete="new-password" aria-label="Password input field">
+            <span class="toggle-eye" id="toggleEye" title="Show/Hide Password" role="button" tabindex="0" aria-label="Show password" aria-pressed="false">
+                <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                    <line x1="2" y1="2" x2="22" y2="22"/>
+                </svg>
+            </span>
         </div>
 
-        <div class="breach-status hidden" id="breachStatus" role="status" aria-live="polite"></div>
+        <div class="strength-bar" id="strengthBar"></div>
+        <div class="strength-text" id="strengthText">Awaiting input...</div>
+
+        <div class="tips-container" id="tipsContainer"></div>
+
+        <div class="breach-section">
+            <div class="toggle-container">
+                <span>Check against known data breaches</span>
+                <label class="switch">
+                    <input type="checkbox" id="breachToggle" aria-label="Toggle breach check">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="info-box hidden" id="breachInfo">
+                <strong>How does this work privately?</strong><br>
+                We use a concept called <strong>kAnonymity</strong> using the <strong>SHA1</strong> hashing algorithm:
+                <br><br>
+                1. Your browser hashes your password locally using the Web Crypto API.<br>
+                2. Only the first 5 characters of that hash are sent to the HaveIBeenPwned (HIBP) API.<br>
+                3. The API returns a list of hundreds of leaked password hashes that start with those 5 characters.<br>
+                4. Your browser checks if your full hash is in that list locally.<br>
+                <br>
+                <strong>Result:</strong> You know if your password is leaked, but HIBP never saw your password.
+            </div>
+
+            <div class="breach-status hidden" id="breachStatus" role="status" aria-live="polite"></div>
+        </div>
     </div>
+
+    <a href="https://github.com/Vlone-p" target="_blank" rel="noopener noreferrer" class="github-link" aria-label="View my GitHub profile">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+    </a>
 </div>
 
 <script type="module" src="script.js"></script>
